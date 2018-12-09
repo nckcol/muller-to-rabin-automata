@@ -174,6 +174,7 @@ function MullerAutomata(
     startState,
     table,
     toRabinAutomata() {
+      console.log("========== Rabin Automata ===========");
       const states = [];
       const transitions = [];
 
@@ -215,11 +216,29 @@ function MullerAutomata(
 
       console.log("start:", startStateIndex);
 
+      console.log("f:");
       console.log(transitions.join("\n"));
 
-      const statePairList = [];
+      const statePairList = table.map((Fi, index) => {
+        // console.log(Fi);
+        const S = A.filter(
+          state =>
+            // console.log(state[state.length - 1][0]) ||
+            !Fi.includes(state[state.length - 1][0])
+        ).map(ns => findStateIndex(A, ns));
+        const R = A.filter(state =>
+          // console.log(state[index]) ||
+          equal(state[index], Fi)
+        ).map(ns => findStateIndex(A, ns));
+        return [S, R];
+      });
 
-      return RabinAutomaton(
+      console.log("Pairs: ");
+      statePairList.forEach(([S, R], index) => {
+        console.log(`S${index}: `, S, `R${index}: `, R);
+      });
+
+      return RabinAutomata(
         states,
         this.inputAlphabet,
         transitions,
@@ -231,22 +250,31 @@ function MullerAutomata(
 }
 
 function main() {
+  const s0 = "s0";
   const s1 = "s1";
   const s2 = "s2";
-  const states = [s1, s2];
+  const states = [s0, s1, s2];
 
   const [a, b] = ["a", "b"];
 
   const alphabet = [a, b];
 
   const table1 = [[s1], [s1, s2]]; // infinitely many 'a'
-  const table2 = [[s2]]; // finitely many 'a'
+  const table2 = [[s1]]; // finitely many 'a'
+
+  // const transitions = [
+  //   TransitionRelation(s1, a, s1),
+  //   TransitionRelation(s1, b, s2),
+  //   TransitionRelation(s2, a, s1),
+  //   TransitionRelation(s2, b, s2)
+  // ];
 
   const transitions = [
+    TransitionRelation(s0, a, s1),
+    TransitionRelation(s0, b, s2),
     TransitionRelation(s1, a, s1),
-    TransitionRelation(s1, b, s2),
-    TransitionRelation(s2, a, s1),
-    TransitionRelation(s2, b, s2)
+    TransitionRelation(s1, b, s0),
+    TransitionRelation(s2, a, s1)
   ];
 
   const MA = MullerAutomata(states, alphabet, transitions, s1, table2);
