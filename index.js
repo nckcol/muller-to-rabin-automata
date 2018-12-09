@@ -1,3 +1,14 @@
+const superset = require('./helpers/superset');
+const intersection = require('./helpers/intersection');
+const union = require('./helpers/union');
+
+function Set(array) {
+  let elements = array;
+  return {
+    toString() {}
+  };
+}
+
 function TransitionRelation(state, inputSymbol, nextState) {
   return {
     state,
@@ -33,17 +44,17 @@ function RabinAutomata(
     state: startState,
     next(inputSymbol) {
       if (!this.inputAlphabet.includes(inputSymbol)) {
-        throw new Error("Input symbol is not exist in input alphabet");
+        throw new Error('Input symbol is not exist in input alphabet');
       }
     },
     toString() {
-      const statesString = `{ ${this.states.join(", ")} }`;
-      const inputAlphabetString = `{ ${this.inputAlphabet.join(", ")} }`;
+      const statesString = `{ ${this.states.join(', ')} }`;
+      const inputAlphabetString = `{ ${this.inputAlphabet.join(', ')} }`;
 
-      const relationString = this.transitionRelation.join("\n");
+      const relationString = this.transitionRelation.join('\n');
 
       const startStateString = startState.toString();
-      const statePairListString = `{ ${statePairListString.join(", ")} }`;
+      const statePairListString = `{ ${statePairListString.join(', ')} }`;
 
       return `
 A = ${statesString}
@@ -58,17 +69,6 @@ start: ${startStateString}
   };
 }
 
-function getSuperset(set) {
-  const superset = [[null]];
-  const len = set.length + 1;
-  for (let size = 1; size < len; size++) {
-    for (let i = 0; i < len - size; i++) {
-      superset.push(set.slice(i, i + size));
-    }
-  }
-  return superset;
-}
-
 const composition = (a, b) => {
   const composition = [];
   for (let i = 0; i < a.length; i++) {
@@ -81,17 +81,9 @@ const composition = (a, b) => {
 
 function getRabinState(table, states) {
   return table
-    .map(getSuperset)
+    .map(superset)
     .concat([states.map(a => [a])])
     .reduce(composition, [[]]);
-}
-
-function e(a) {
-  if (a === null) {
-    return "e";
-  }
-
-  return a;
 }
 
 function equal(A, B) {
@@ -108,38 +100,8 @@ function equal(A, B) {
   return true;
 }
 
-function union(A, B) {
-  const C = [...A];
-
-  for (b of B) {
-    if (C.includes(b)) continue;
-    C.push(b);
-  }
-
-  if (!C.length) {
-    return [null];
-  }
-
-  return C.filter(item => item !== null);
-}
-
-function intersection(A, B) {
-  const C = [];
-
-  for (a of A) {
-    if (!B.includes(a)) continue;
-    C.push(a);
-  }
-
-  if (!C.length) {
-    return [null];
-  }
-
-  return C.filter(item => item !== null);
-}
-
 function solveRelation(relation, state, input) {
-  for (item of relation) {
+  for (let item of relation) {
     if (item.match(state, input)) return item.nextState;
   }
 }
@@ -174,7 +136,7 @@ function MullerAutomata(
     startState,
     table,
     toRabinAutomata() {
-      console.log("========== Rabin Automata ===========");
+      console.log('========== Rabin Automata ===========');
       const states = [];
       const transitions = [];
 
@@ -182,9 +144,15 @@ function MullerAutomata(
 
       const A = getRabinState(this.table, this.states);
 
+      console.log('\n');
+      console.log(A);
+      console.log('\n');
+
       const startState = Array.from({ length: table.length })
-        .fill([null])
+        .fill([])
         .concat([[this.startState]]);
+
+      console.log(startState);
 
       const startStateIndex = findStateIndex(A, startState);
 
@@ -195,18 +163,27 @@ function MullerAutomata(
         console.log(num, state);
         states.push(num);
 
-        for (x of this.inputAlphabet) {
-          const a_ = solveRelation(this.transitionRelation, a, x);
+        for (let x of this.inputAlphabet) {
+          let a_ = solveRelation(this.transitionRelation, a, x);
+
+          if (!a_) {
+            a_ = a;
+          }
 
           const UU_ = UU.map((U, index) => {
             const F = table[index];
+            console.log(F);
             if (equal(U, F)) {
-              return [null];
+              console.log('empty');
+              return [];
             }
+
+            console.log('not empty');
             return intersection(F, union(U, [a_]));
           });
 
           const newState = UU_.concat([[a_]]);
+          console.log(a, a_, state, newState);
 
           const newStateIndex = findStateIndex(A, newState);
 
@@ -214,10 +191,10 @@ function MullerAutomata(
         }
       });
 
-      console.log("start:", startStateIndex);
+      console.log('start:', startStateIndex);
 
-      console.log("f:");
-      console.log(transitions.join("\n"));
+      console.log('f:');
+      console.log(transitions.join('\n'));
 
       const statePairList = table.map((Fi, index) => {
         // console.log(Fi);
@@ -233,7 +210,7 @@ function MullerAutomata(
         return [S, R];
       });
 
-      console.log("Pairs: ");
+      console.log('Pairs: ');
       statePairList.forEach(([S, R], index) => {
         console.log(`S${index}: `, S, `R${index}: `, R);
       });
@@ -250,32 +227,32 @@ function MullerAutomata(
 }
 
 function main() {
-  const s0 = "s0";
-  const s1 = "s1";
-  const s2 = "s2";
-  const states = [s0, s1, s2];
+  const s0 = 's0';
+  const s1 = 's1';
+  const s2 = 's2';
+  const states = [s1, s2];
 
-  const [a, b] = ["a", "b"];
+  const [a, b] = ['a', 'b'];
 
   const alphabet = [a, b];
 
   const table1 = [[s1], [s1, s2]]; // infinitely many 'a'
-  const table2 = [[s1]]; // finitely many 'a'
-
-  // const transitions = [
-  //   TransitionRelation(s1, a, s1),
-  //   TransitionRelation(s1, b, s2),
-  //   TransitionRelation(s2, a, s1),
-  //   TransitionRelation(s2, b, s2)
-  // ];
+  const table2 = [[s2]]; // finitely many 'a'
 
   const transitions = [
-    TransitionRelation(s0, a, s1),
-    TransitionRelation(s0, b, s2),
     TransitionRelation(s1, a, s1),
-    TransitionRelation(s1, b, s0),
-    TransitionRelation(s2, a, s1)
+    TransitionRelation(s1, b, s2),
+    TransitionRelation(s2, a, s1),
+    TransitionRelation(s2, b, s2)
   ];
+
+  // const transitions = [
+  //   TransitionRelation(s0, a, s1),
+  //   TransitionRelation(s0, b, s2),
+  //   TransitionRelation(s1, a, s1),
+  //   TransitionRelation(s1, b, s0),
+  //   TransitionRelation(s2, a, s1)
+  // ];
 
   const MA = MullerAutomata(states, alphabet, transitions, s1, table2);
 
